@@ -175,81 +175,103 @@
     </main>
 
     <script>
-        const API_KEY = "AIzaSyBvBK8fEycbTk44VfP25sGoTCTgw7K6neA";
+    const API_KEY = "AIzaSyBvBK8fEycbTk44VfP25sGoTCTgw7K6neA";
 
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('active');
-            document.getElementById('overlay').classList.toggle('active');
-        }
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('active');
+        document.getElementById('overlay').classList.toggle('active');
+    }
 
-        function switchTab(tabId) {
-            document.querySelectorAll('.sidebar-panel').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.s-tab').forEach(t => t.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            event.target.classList.add('active');
-        }
+    function switchTab(tabId) {
+        document.querySelectorAll('.sidebar-panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.s-tab').forEach(t => t.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        if(event) event.target.classList.add('active');
+    }
 
-        async function handleSend() {
-            const input = document.getElementById('user-input');
-            const message = input.value.trim();
-            if (!message) return;
+    async function handleSend() {
+        const input = document.getElementById('user-input');
+        const message = input.value.trim();
+        if (!message) return;
 
-            // Remove welcome
-            const welcome = document.getElementById('welcome-screen');
-            if (welcome) welcome.remove();
+        const welcome = document.getElementById('welcome-screen');
+        if (welcome) welcome.remove();
 
-            appendMessage('user', message);
-            input.value = '';
-            input.style.height = 'auto';
+        appendMessage('user', message);
+        input.value = '';
+        input.style.height = 'auto';
 
-            const typingId = appendTyping();
+        const typingId = appendTyping();
+        
+        try {
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ 
+                        parts: [{ text: `Jawablah sebagai Penyuluh Agama Islam yang bijak dan singkat: ${message}` }] 
+                    }]
+                })
+            });
+
+            const data = await response.json();
             
-            try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: `Anda adalah pakar agama Islam yang bijak. Jawablah pertanyaan ini dengan singkat, padat, dan berikan dalil jika ada: ${message}` }] }]
-                    })
-                });
+            // Cek jika ada error dari Google API
+            if (data.error) {
+                throw new Error(data.error.message);
+            }
 
-                const data = await response.json();
-                document.getElementById(typingId).remove();
-                
+            const typingElem = document.getElementById(typingId);
+            if (typingElem) typingElem.remove();
+            
+            if (data.candidates && data.candidates[0].content.parts[0].text) {
                 const aiText = data.candidates[0].content.parts[0].text;
                 appendMessage('ai', aiText);
-            } catch (error) {
-                document.getElementById(typingId).remove();
-                appendMessage('ai', "Maaf, server sedang sibuk. Mohon coba lagi nanti.");
+            } else {
+                throw new Error("Format jawaban tidak dikenali.");
             }
+        } catch (error) {
+            const typingElem = document.getElementById(typingId);
+            if (typingElem) typingElem.remove();
+            appendMessage('ai', "Maaf, terjadi kesalahan: " + error.message);
+            console.error(error);
         }
+    }
 
-        function appendMessage(sender, text) {
-            const container = document.getElementById('chat-messages');
-            const row = document.createElement('div');
-            row.className = `msg-row ${sender}`;
-            row.innerHTML = `
-                <div class="msg-av ${sender}">${sender === 'ai' ? '🕌' : '👤'}</div>
-                <div class="msg-bubble">${text.replace(/\n/g, '<br>')}</div>
-            `;
-            container.appendChild(row);
-            container.scrollTop = container.scrollHeight;
-        }
+    function appendMessage(sender, text) {
+        const container = document.getElementById('chat-messages');
+        const row = document.createElement('div');
+        row.className = `msg-row ${sender}`;
+        row.innerHTML = `
+            <div class="msg-av ${sender}">${sender === 'ai' ? '🕌' : '👤'}</div>
+            <div class="msg-bubble">${text.replace(/\n/g, '<br>')}</div>
+        `;
+        container.appendChild(row);
+        container.scrollTop = container.scrollHeight;
+    }
 
-        function appendTyping() {
-            const id = 'typing-' + Date.now();
-            const container = document.getElementById('chat-messages');
-            const row = document.createElement('div');
-            row.className = 'msg-row ai';
-            row.id = id;
-            row.innerHTML = `
-                <div class="msg-av ai">🕌</div>
-                <div class="typing"><span></span><span></span><span></span></div>
-            `;
-            container.appendChild(row);
-            container.scrollTop = container.scrollHeight;
-            return id;
+    function appendTyping() {
+        const id = 'typing-' + Date.now();
+        const container = document.getElementById('chat-messages');
+        const row = document.createElement('div');
+        row.className = 'msg-row ai';
+        row.id = id;
+        row.innerHTML = `
+            <div class="msg-av ai">🕌</div>
+            <div class="typing"><span></span><span></span><span></span></div>
+        `;
+        container.appendChild(row);
+        container.scrollTop = container.scrollHeight;
+        return id;
+    }
+
+    // Tambahan agar bisa kirim pesan dengan tombol Enter
+    document.getElementById('user-input').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSend();
         }
-    </script>
+    });
+</script>
 </body>
 </html>
