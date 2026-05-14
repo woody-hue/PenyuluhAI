@@ -1,0 +1,20 @@
+{
+  "short_name": "Penyuluh AI",
+  "name": "Penyuluh Agama Islam AI",
+  "description": "Asisten cerdas tanya jawab seputar Agama Islam dan jadwal sholat.",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f8f4ec",
+  "theme_color": "#0d5c4a",
+  "screenshots": [],
+  "categories": ["education", "lifestyle"]
+}
