@@ -6,6 +6,7 @@
 <title>Penyuluh Agama Islam AI</title>
 <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
+/* CSS Sama persis seperti sebelumnya */
 :root {
   --teal:       #0d5c4a;
   --teal-mid:   #1a7a62;
@@ -449,17 +450,15 @@ body {
     <div class="h-sub">Al-Qur'an · Sunnah · Jadwal Sholat · Hadits</div>
   </div>
   <div class="h-right">
-    <div class="badge"><span class="badge-dot"></span> myQuran API</div>
+    <div class="badge"><span class="badge-dot"></span> API myQuran</div>
     <button class="menu-btn" onclick="toggleSidebar()" title="Panel Data Islami">☰</button>
   </div>
 </header>
 
-<!-- ERROR BANNER (disembunyikan secara default) -->
 <div class="error-banner" id="errorBanner" style="display:none"></div>
 
 <!-- BODY -->
 <div class="app-body">
-
   <!-- SIDEBAR -->
   <aside class="sidebar" id="sidebar">
     <div class="s-tabs">
@@ -525,7 +524,6 @@ body {
   <!-- CHAT -->
   <main class="chat-area">
     <div class="messages" id="messages">
-      <!-- Welcome screen -->
       <div class="welcome" id="welcomeScreen">
         <div class="w-emblem">☪</div>
         <div class="w-bism">بِسْمِ اللهِ الرَّحْمَنِ الرَّحِيْمِ</div>
@@ -563,7 +561,7 @@ body {
         </button>
       </div>
       <div class="input-hint">
-        Jawaban bersifat edukatif · Data real-time myQuran API · Fatwa resmi konsultasikan ke ulama setempat
+        Jawaban bersifat edukatif · Data real-time myQuran API · Mode Standalone Tanpa Server
       </div>
     </div>
   </main>
@@ -580,12 +578,16 @@ body {
   </div>
 </div>
 
-<!-- TOAST -->
 <div class="toast" id="toast"></div>
 
 <script>
+// =======================================================================
+// MASUKKAN API KEY GOOGLE GEMINI ANDA DI SINI
+const GEMINI_API_KEY = 'MASUKKAN_API_KEY_GEMINI_ANDA_DI_SINI';
+// =======================================================================
+
 // ── State ─────────────────────────────────────────────────
-let chatHistory = [];   // [{role, content}]
+let chatHistory = [];   
 let currentTopic = '';
 let sidebarOpen  = true;
 let allSurah     = [];
@@ -599,12 +601,9 @@ const PRAYER  = ['subuh','dzuhur','ashar','maghrib','isya'];
 
 // ── Helper ────────────────────────────────────────────────
 function esc(t) {
-  return String(t)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 function esc2(t) { return String(t||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
-
 function fmtAI(text) {
   return text
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
@@ -612,20 +611,15 @@ function fmtAI(text) {
     .replace(/\(HR ([^)]+)\)/g, '<span class="msg-ref">📜 HR $1</span>')
     .replace(/\n/g, '<br>');
 }
-
 function showToast(msg) {
   const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
+  t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2500);
 }
-
 function showError(msg) {
   const b = document.getElementById('errorBanner');
-  b.textContent = msg;
-  b.style.display = msg ? 'block' : 'none';
+  b.textContent = msg; b.style.display = msg ? 'block' : 'none';
 }
-
 function scrollBottom() {
   const m = document.getElementById('messages');
   m.scrollTop = m.scrollHeight;
@@ -636,134 +630,110 @@ function toggleSidebar() {
   sidebarOpen = !sidebarOpen;
   document.getElementById('sidebar').classList.toggle('closed', !sidebarOpen);
 }
-
 function setTab(name, el) {
   document.querySelectorAll('.s-tab').forEach(t => t.classList.remove('on'));
   document.querySelectorAll('.s-panel').forEach(p => p.classList.remove('on'));
   el.classList.add('on');
   document.getElementById('panel-' + name).classList.add('on');
 }
-
 function setTopic(el, t) {
   document.querySelectorAll('.t-pill').forEach(p => p.classList.remove('on'));
-  el.classList.add('on');
-  currentTopic = t;
-  document.getElementById('inputField').placeholder =
-    t ? `Tanyakan seputar ${t}...` : 'Tanyakan seputar fiqih, akidah, tafsir, dakwah...';
+  el.classList.add('on'); currentTopic = t;
+  document.getElementById('inputField').placeholder = t ? `Tanyakan seputar ${t}...` : 'Tanyakan seputar fiqih, akidah, tafsir, dakwah...';
 }
-
 function autoResize(el) {
-  el.style.height = 'auto';
-  el.style.height = Math.min(el.scrollHeight, 90) + 'px';
+  el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 90) + 'px';
 }
-
 function handleKey(e) {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
 }
-
 function hideWelcome() {
-  const w = document.getElementById('welcomeScreen');
-  if (w) w.remove();
+  const w = document.getElementById('welcomeScreen'); if (w) w.remove();
 }
-
 function ask(text) {
-  document.getElementById('inputField').value = text;
-  sendMsg();
+  document.getElementById('inputField').value = text; sendMsg();
 }
-
-// ── Tambah pesan ke UI ────────────────────────────────────
 function addUserMsg(text) {
   const msgs = document.getElementById('messages');
-  const div = document.createElement('div');
-  div.className = 'msg-row user';
-  div.innerHTML = `
-    <div class="msg-av user">👤</div>
-    <div class="msg-body">
-      <div class="msg-name" style="text-align:right">👤 Anda</div>
-      <div class="msg-bubble user">${esc(text).replace(/\n/g,'<br>')}</div>
-    </div>`;
-  msgs.appendChild(div);
-  scrollBottom();
+  const div = document.createElement('div'); div.className = 'msg-row user';
+  div.innerHTML = `<div class="msg-av user">👤</div><div class="msg-body"><div class="msg-name" style="text-align:right">👤 Anda</div><div class="msg-bubble user">${esc(text).replace(/\n/g,'<br>')}</div></div>`;
+  msgs.appendChild(div); scrollBottom();
 }
-
 function addTyping() {
   const msgs = document.getElementById('messages');
-  const div = document.createElement('div');
-  div.className = 'typing-row'; div.id = 'typingRow';
-  div.innerHTML = `
-    <div class="msg-av ai" style="color:#fff">☪</div>
-    <div class="typing-bub"><span></span><span></span><span></span></div>`;
-  msgs.appendChild(div);
-  scrollBottom();
+  const div = document.createElement('div'); div.className = 'typing-row'; div.id = 'typingRow';
+  div.innerHTML = `<div class="msg-av ai" style="color:#fff">☪</div><div class="typing-bub"><span></span><span></span><span></span></div>`;
+  msgs.appendChild(div); scrollBottom();
 }
-
 function removeTyping() {
-  const t = document.getElementById('typingRow');
-  if (t) t.remove();
+  const t = document.getElementById('typingRow'); if (t) t.remove();
 }
-
 function addAiMsg(text) {
   const msgs = document.getElementById('messages');
-  const div = document.createElement('div');
-  div.className = 'msg-row ai';
-  div.innerHTML = `
-    <div class="msg-av ai" style="color:#fff">☪</div>
-    <div class="msg-body">
-      <div class="msg-name">🕌 Penyuluh AI</div>
-      <div class="msg-bubble ai">${fmtAI(text)}</div>
-    </div>`;
-  msgs.appendChild(div);
-  scrollBottom();
+  const div = document.createElement('div'); div.className = 'msg-row ai';
+  div.innerHTML = `<div class="msg-av ai" style="color:#fff">☪</div><div class="msg-body"><div class="msg-name">🕌 Penyuluh AI</div><div class="msg-bubble ai">${fmtAI(text)}</div></div>`;
+  msgs.appendChild(div); scrollBottom();
 }
 
-// ── Chat (ke backend) ──────────────────────────────────────
+// ── MESIN AI GEMINI (STANDALONE) ──────────────────────────────────────
+async function callGemini(messagesToSent) {
+  if (GEMINI_API_KEY === 'AIzaSyCQlWB7g22i-rcDPLC3alvN3zeEmcXvYUM') {
+    throw new Error("Silakan masukkan API Key Gemini Anda di dalam kode terlebih dahulu.");
+  }
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+  
+  // Format history untuk API Google
+  const formattedContents = messagesToSent.map(msg => ({
+    role: msg.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: msg.content }]
+  }));
+
+  const sysPrompt = `Anda adalah Asisten Penyuluh Agama Islam yang berdedikasi. Berikan jawaban yang menyejukkan, komprehensif, berdasarkan Al-Qur'an dan As-Sunnah. Gunakan bahasa Indonesia yang santun, terstruktur, dan mudah dipahami masyarakat luas. Topik diskusi saat ini: ${currentTopic || 'Umum'}.`;
+
+  const body = {
+    systemInstruction: { parts: [{ text: sysPrompt }] },
+    contents: formattedContents
+  };
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+  return data.candidates[0].content.parts[0].text;
+}
+
+// ── Eksekusi Pesan Umum ──
 async function sendMsg(overrideText) {
   const field = document.getElementById('inputField');
   const text  = (overrideText !== undefined ? overrideText : field.value).trim();
   if (!text || busy) return;
 
-  hideWelcome();
-  busy = true;
+  hideWelcome(); busy = true;
   field.value = ''; field.style.height = 'auto';
   document.getElementById('sendBtn').disabled = true;
 
-  // Tambah ke history & tampilkan
   chatHistory.push({ role: 'user', content: text });
-  addUserMsg(text);
-  addTyping();
+  addUserMsg(text); addTyping();
 
   try {
-    const res = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        messages: chatHistory,
-        topic: currentTopic
-      })
-    });
-
-    const data = await res.json();
-    removeTyping();
-
-    if (data.error) {
-      showError('⚠️ ' + data.error);
-      chatHistory.pop();
-    } else {
-      showError('');
-      chatHistory.push({ role: 'assistant', content: data.reply });
-      addAiMsg(data.reply);
-    }
+    const replyText = await callGemini(chatHistory);
+    removeTyping(); showError('');
+    chatHistory.push({ role: 'assistant', content: replyText });
+    addAiMsg(replyText);
   } catch (err) {
-    removeTyping();
-    showError('⚠️ Tidak dapat terhubung ke server. Pastikan server.py berjalan.');
+    removeTyping(); showError('⚠️ Error AI: ' + err.message);
     chatHistory.pop();
   }
 
-  busy = false;
-  document.getElementById('sendBtn').disabled = false;
+  busy = false; document.getElementById('sendBtn').disabled = false;
 }
 
-// ── Jadwal Sholat ─────────────────────────────────────────
+// ── Jadwal Sholat (Langsung API myQuran) ────────────────────────────────
 async function cariKota() {
   const q = document.getElementById('kotaInput').value.trim();
   if (!q) return;
@@ -771,43 +741,34 @@ async function cariKota() {
   const btn = document.getElementById('shGoBtn');
   btn.innerHTML = '<span class="spinner" style="width:14px;height:14px"></span>';
   btn.disabled  = true;
-  document.getElementById('jadwalList').innerHTML =
-    '<div style="text-align:center;padding:20px"><span class="spinner"></span></div>';
+  document.getElementById('jadwalList').innerHTML = '<div style="text-align:center;padding:20px"><span class="spinner"></span></div>';
 
   try {
-    const r = await fetch(`/api/quran/sholat/kota/cari/${encodeURIComponent(q)}`);
+    const r = await fetch(`https://api.myquran.com/v2/sholat/kota/cari/${encodeURIComponent(q)}`);
     const d = await r.json();
-
     if (d.data && d.data.length > 0) {
       const kota = d.data[0];
       document.getElementById('shCity').textContent = kota.lokasi;
       await loadJadwal(kota.id);
     } else {
-      document.getElementById('jadwalList').innerHTML =
-        '<div style="text-align:center;padding:20px;color:var(--ink-muted);font-size:11px">Kota tidak ditemukan. Coba nama lain.</div>';
+      document.getElementById('jadwalList').innerHTML = '<div style="text-align:center;padding:20px;color:var(--ink-muted);font-size:11px">Kota tidak ditemukan.</div>';
     }
   } catch(e) {
-    document.getElementById('jadwalList').innerHTML =
-      '<div style="text-align:center;padding:20px;color:#c0392b;font-size:11px">Gagal mengambil data. Cek koneksi internet.</div>';
+    document.getElementById('jadwalList').innerHTML = '<div style="text-align:center;padding:20px;color:#c0392b;font-size:11px">Gagal mengambil data.</div>';
   }
-
-  btn.textContent = 'Cari';
-  btn.disabled = false;
+  btn.textContent = 'Cari'; btn.disabled = false;
 }
 
 async function loadJadwal(id) {
   const now = new Date();
   const y = now.getFullYear(), m = now.getMonth()+1, d = now.getDate();
-
-  const r    = await fetch(`/api/quran/sholat/jadwal/${id}/${y}/${m}/${d}`);
+  const r    = await fetch(`https://api.myquran.com/v2/sholat/jadwal/${id}/${y}/${m}/${d}`);
   const data = await r.json();
 
   if (!data.data) return;
   const j = data.data.jadwal;
-
   document.getElementById('shDate').textContent = j.tanggal;
 
-  // Cari waktu sholat berikutnya
   const nowMins = now.getHours()*60 + now.getMinutes();
   let nxKey = null, nxMins = Infinity;
   PRAYER.forEach(k => {
@@ -823,145 +784,84 @@ async function loadJadwal(id) {
     document.getElementById('shNext').style.display = 'flex';
   }
 
-  const list = document.getElementById('jadwalList');
-  list.innerHTML = '';
+  const list = document.getElementById('jadwalList'); list.innerHTML = '';
   SORDER.forEach(k => {
     if (!j[k]) return;
     const hi = k === nxKey ? 'hi' : '';
-    list.innerHTML += `
-      <div class="j-item ${hi}">
-        <div style="display:flex;align-items:center">
-          <span class="j-icon">${SICONS[k]}</span>
-          <span class="j-name">${SNAMES[k]}</span>
-        </div>
-        <span class="j-time">${j[k]}</span>
-      </div>`;
+    list.innerHTML += `<div class="j-item ${hi}"><div style="display:flex;align-items:center"><span class="j-icon">${SICONS[k]}</span><span class="j-name">${SNAMES[k]}</span></div><span class="j-time">${j[k]}</span></div>`;
   });
 }
 
-// ── Al-Qur'an ─────────────────────────────────────────────
+// ── Al-Qur'an (Langsung API myQuran) ────────────────────────────────────
 async function loadSurahList() {
   try {
-    const r = await fetch('/api/quran/quran/surah');
+    const r = await fetch('https://api.myquran.com/v2/quran/surah');
     const d = await r.json();
     allSurah = d.data || [];
     renderSurahList(allSurah);
   } catch(e) {
-    document.getElementById('surahList').innerHTML =
-      '<div style="text-align:center;padding:16px;font-size:11px;color:var(--ink-muted)">Gagal memuat daftar surah.</div>';
+    document.getElementById('surahList').innerHTML = '<div style="text-align:center;padding:16px;font-size:11px;color:var(--ink-muted)">Gagal memuat daftar surah.</div>';
   }
 }
-
 function renderSurahList(list) {
   const el = document.getElementById('surahList');
   if (!list.length) {
-    el.innerHTML = '<div style="text-align:center;padding:16px;font-size:11px;color:var(--ink-muted)">Surah tidak ditemukan.</div>';
-    return;
+    el.innerHTML = '<div style="text-align:center;padding:16px;font-size:11px;color:var(--ink-muted)">Surah tidak ditemukan.</div>'; return;
   }
-  el.innerHTML = list.map(s => `
-    <div class="surah-item" onclick="openSurah(${s.nomor},'${esc2(s.nama_latin)}')">
-      <div class="s-num">${s.nomor}</div>
-      <div class="s-info">
-        <div class="s-name">${esc(s.nama_latin)}</div>
-        <div class="s-meta">${esc(s.arti)} · ${s.jumlah_ayat} ayat · ${s.tempat_turun}</div>
-      </div>
-      <div class="s-ar">${s.nama}</div>
-    </div>`).join('');
+  el.innerHTML = list.map(s => `<div class="surah-item" onclick="openSurah(${s.nomor},'${esc2(s.nama_latin)}')"><div class="s-num">${s.nomor}</div><div class="s-info"><div class="s-name">${esc(s.nama_latin)}</div><div class="s-meta">${esc(s.arti)} · ${s.jumlah_ayat} ayat</div></div><div class="s-ar">${s.nama}</div></div>`).join('');
 }
-
 function filterSurah() {
   const q = document.getElementById('surahSearch').value.toLowerCase();
-  renderSurahList(allSurah.filter(s =>
-    s.nama_latin.toLowerCase().includes(q) ||
-    s.arti.toLowerCase().includes(q) ||
-    String(s.nomor).includes(q)
-  ));
+  renderSurahList(allSurah.filter(s => s.nama_latin.toLowerCase().includes(q) || s.arti.toLowerCase().includes(q) || String(s.nomor).includes(q)));
 }
-
 async function openSurah(num, name) {
   document.getElementById('modalTitle').textContent = `${num}. ${name}`;
-  document.getElementById('modalBody').innerHTML =
-    '<div style="text-align:center;padding:28px"><span class="spinner"></span></div>';
+  document.getElementById('modalBody').innerHTML = '<div style="text-align:center;padding:28px"><span class="spinner"></span></div>';
   document.getElementById('overlay').classList.add('open');
 
   try {
-    const r = await fetch(`/api/quran/quran/surah/${num}`);
+    const r = await fetch(`https://api.myquran.com/v2/quran/surah/${num}`);
     const d = await r.json();
     const ayat = d.data?.ayat || [];
-
-    document.getElementById('modalBody').innerHTML = ayat.map(a => `
-      <div class="ayat-item">
-        <div class="ayat-num">${a.nomor}</div>
-        <div class="ayat-ar">${a.ar}</div>
-        <div class="ayat-tr">${esc(a.idn)}</div>
-        <button class="ayat-send"
-          onclick="sendAyat('${esc2(name)}',${a.nomor},'${esc2(a.ar)}','${esc2(a.idn)}')">
-          ✉️ Kirim ke Chat & Minta Penjelasan
-        </button>
-      </div>`).join('');
+    document.getElementById('modalBody').innerHTML = ayat.map(a => `<div class="ayat-item"><div class="ayat-num">${a.nomor}</div><div class="ayat-ar">${a.ar}</div><div class="ayat-tr">${esc(a.idn)}</div><button class="ayat-send" onclick="sendAyat('${esc2(name)}',${a.nomor},'${esc2(a.ar)}','${esc2(a.idn)}')">✉️ Minta Penjelasan</button></div>`).join('');
   } catch(e) {
-    document.getElementById('modalBody').innerHTML =
-      '<div style="text-align:center;padding:20px;font-size:11px;color:#c0392b">Gagal memuat surah.</div>';
+    document.getElementById('modalBody').innerHTML = '<div style="text-align:center;padding:20px;font-size:11px;color:#c0392b">Gagal memuat surah.</div>';
   }
 }
-
-function closeQuranModal() {
-  document.getElementById('overlay').classList.remove('open');
-}
-function closeModal(e) {
-  if (e.target.id === 'overlay') closeQuranModal();
-}
+function closeQuranModal() { document.getElementById('overlay').classList.remove('open'); }
+function closeModal(e) { if (e.target.id === 'overlay') closeQuranModal(); }
 
 async function sendAyat(surah, num, ar, tr) {
-  closeQuranModal();
-  hideWelcome();
+  closeQuranModal(); hideWelcome();
   const displayText = `Jelaskan QS ${surah} ayat ${num}`;
   const aiText = `Tolong jelaskan dan tafsirkan QS ${surah} ayat ${num}: "${ar}" (artinya: ${tr})`;
 
   chatHistory.push({ role: 'user', content: aiText });
-  addUserMsg(displayText);
-  addTyping();
-  busy = true;
+  addUserMsg(displayText); addTyping(); busy = true;
 
   try {
-    const res  = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: chatHistory, topic: '' })
-    });
-    const data = await res.json();
-    removeTyping();
-    if (data.error) { showError('⚠️ ' + data.error); chatHistory.pop(); }
-    else { showError(''); chatHistory.push({ role:'assistant', content:data.reply }); addAiMsg(data.reply); }
+    const replyText = await callGemini(chatHistory);
+    removeTyping(); showError('');
+    chatHistory.push({ role: 'assistant', content: replyText });
+    addAiMsg(replyText);
   } catch(e) {
-    removeTyping();
-    showError('⚠️ Tidak dapat terhubung ke server.');
-    chatHistory.pop();
+    removeTyping(); showError('⚠️ Error AI: ' + e.message); chatHistory.pop();
   }
   busy = false;
 }
 
-// ── Hadis ─────────────────────────────────────────────────
+// ── Hadis (Langsung API myQuran) ───────────────────────────────────────
 async function loadHadis() {
   const kit = document.getElementById('hadisSelect').value;
   const el  = document.getElementById('hadisContent');
   el.innerHTML = '<div style="text-align:center;padding:20px"><span class="spinner"></span></div>';
 
   try {
-    const r = await fetch(`/api/quran/hadis/${kit}/acak`);
+    const r = await fetch(`https://api.myquran.com/v2/hadis/${kit}/acak`);
     const d = await r.json();
     if (d.data) {
       const h = d.data;
-      el.innerHTML = `
-        <div class="h-card">
-          <div class="h-num">${esc(h.kitab||kit)} · No. ${h.nomor||'—'}</div>
-          <div class="h-ar">${h.arab||''}</div>
-          <div class="h-id">${esc(h.id||'')}</div>
-          <button class="h-send"
-            onclick="sendHadis('${esc2(h.kitab||kit)}','${esc2(h.id||'')}')">
-            ✉️ Kirim ke Chat & Minta Penjelasan
-          </button>
-        </div>`;
+      el.innerHTML = `<div class="h-card"><div class="h-num">${esc(h.kitab||kit)} · No. ${h.nomor||'—'}</div><div class="h-ar">${h.arab||''}</div><div class="h-id">${esc(h.id||'')}</div><button class="h-send" onclick="sendHadis('${esc2(h.kitab||kit)}','${esc2(h.id||'')}')">✉️ Minta Penjelasan AI</button></div>`;
     } else {
       el.innerHTML = '<div style="text-align:center;padding:20px;font-size:11px;color:var(--ink-muted)">Data tidak tersedia.</div>';
     }
@@ -972,28 +872,19 @@ async function loadHadis() {
 
 async function sendHadis(kitab, text) {
   hideWelcome();
-  const displayText = `Jelaskan hadits dari ${kitab}: "${text.substring(0,60)}..."`;
+  const displayText = `Jelaskan hadits dari ${kitab}`;
   const aiText = `Jelaskan makna dan kandungan hadits berikut dari kitab ${kitab}: "${text}". Berikan konteks, hukum yang dapat diambil, dan nasihat praktis.`;
 
   chatHistory.push({ role:'user', content:aiText });
-  addUserMsg(displayText);
-  addTyping();
-  busy = true;
+  addUserMsg(displayText); addTyping(); busy = true;
 
   try {
-    const res  = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: chatHistory, topic: '' })
-    });
-    const data = await res.json();
-    removeTyping();
-    if (data.error) { showError('⚠️ ' + data.error); chatHistory.pop(); }
-    else { showError(''); chatHistory.push({ role:'assistant', content:data.reply }); addAiMsg(data.reply); }
+    const replyText = await callGemini(chatHistory);
+    removeTyping(); showError('');
+    chatHistory.push({ role: 'assistant', content: replyText });
+    addAiMsg(replyText);
   } catch(e) {
-    removeTyping();
-    showError('⚠️ Tidak dapat terhubung ke server.');
-    chatHistory.pop();
+    removeTyping(); showError('⚠️ Error AI: ' + e.message); chatHistory.pop();
   }
   busy = false;
 }
@@ -1001,10 +892,8 @@ async function sendHadis(kitab, text) {
 // ── Init ──────────────────────────────────────────────────
 (function init() {
   const now = new Date();
-  document.getElementById('shDate').textContent =
-    now.toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
-  loadSurahList();
-  loadHadis();
+  document.getElementById('shDate').textContent = now.toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  loadSurahList(); loadHadis();
 })();
 </script>
 </body>
