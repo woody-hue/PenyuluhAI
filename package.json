@@ -1,0 +1,8 @@
+{
+  "name": "penyuluh-agama-ai",
+  "version": "1.0.0",
+  "description": "Aplikasi AI Penyuluh Agama Islam",
+  "dependencies": {
+    "@google/generative-ai": "^0.2.1"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/api/quran/:path*",
+      "destination": "https://api.myquran.com/v2/:path*"
+    }
+  ]
+}
